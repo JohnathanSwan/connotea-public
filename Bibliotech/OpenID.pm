@@ -36,9 +36,9 @@ __PACKAGE__->mk_accessors(qw/consumer root root_ret/);
 
 sub new {
   my ($class, $sid, $location, $memcache) = @_;
-  my $session  = CGI::Session->new('driver:bibcache;id:md5;serializer:default', $sid, {memcache => $memcache});
-  my $scache   = Bibliotech::OpenID::Store::Memcache->new($memcache);
-  my $consumer = Net::OpenID::JanRain::Consumer->new($session, $scache);
+  my $session  = CGI::Session->new('driver:bibcache;serializer:default;id:md5', $sid, {memcache => $memcache}) or die 'no session';
+  my $scache   = Bibliotech::OpenID::Store::Memcache->new($memcache) or die 'no scache';
+  my $consumer = Net::OpenID::JanRain::Consumer->new($session, $scache) or die 'no consumer';
   my $root     = "$location";
   my $root_ret = $root.'openid?ret=1&cssid='.$session->id;
   return $class->SUPER::new({consumer => $consumer, root => $root, root_ret => $root_ret});
