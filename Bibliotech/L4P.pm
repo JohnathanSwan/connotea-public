@@ -68,8 +68,8 @@ sub default_init_logging {
     }
 
     # look for a default in /etc
-    if ( -f DEFAULT_CONFIG_FILE ) {
-        return init_logging( DEFAULT_CONFIG_FILE );
+    if ( -f DEFAULT_CONF_FILE ) {
+        return init_logging( DEFAULT_CONF_FILE );
     }
 
     # Finally, fall back to the built in config.
