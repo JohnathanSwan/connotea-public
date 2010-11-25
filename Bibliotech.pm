@@ -1222,7 +1222,7 @@ sub recaptcha_error {
             return $result->{error};
         }
     }
-    return undef;
+    return 'no value specified';
 }
 
 sub recaptcha_html {
