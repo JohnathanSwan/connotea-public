@@ -23,7 +23,7 @@ log4perl.appender.STDERR.layout.ConversionPattern = %d %F{1} %L %c{2} %m%n
 CONF
 
 our $VERSION   = ( qw( $Revision$ ) )[1];
-our @EXPORT    = qw( l4p );
+our @EXPORT    = qw( l4p l4p_mdc );
 our @EXPORT_OK = qw( init_logging default_init_logging get_log_conf_file );
 
 {
@@ -36,7 +36,7 @@ our @EXPORT_OK = qw( init_logging default_init_logging get_log_conf_file );
         Log::Log4perl::Config->allow_code(0);
 
         Log::Log4perl->init( $conf_file );
-        my $log = logger();
+        my $log = l4p();
         $log->debug( "Configured by $conf_file" );
 
         return;
@@ -75,9 +75,16 @@ sub default_init_logging {
     # Finally, fall back to the built in config.
     my $conf = DEFAULT_CONF;
     init_logging( \$conf );
-    my $log = logger();
+    my $log = l4p();
     $log->debug( "Configured by default" );
 
+    return;
+}
+
+sub l4p_mdc { 
+    my ($key, $val) = @_;
+
+    Log::Log4perl::MDC->put($key, $val);
     return;
 }
 
