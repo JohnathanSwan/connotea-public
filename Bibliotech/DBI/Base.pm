@@ -1266,9 +1266,9 @@ sub link_generic {
   $options{href}    = $href    if $href;
   $options{class}   = $class   if $class;
   $options{title}   = $title   if $title;
-#JS 2010-11-11
-$options{rel} = "nofollow";
-#/JS 2010-11-11
+  #JS 2010-11-11
+  $options{rel} = "nofollow";
+  #/JS 2010-11-11
   $options{onclick} = $onclick if $onclick;
   my $func = $href ? 'a' : 'span';
   return $cgi->$func(\%options, Bibliotech::Util::encode_xhtml_utf8($label));
