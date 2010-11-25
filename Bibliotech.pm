@@ -56,7 +56,7 @@ our $RECAPTCHA_CHALLENGE_FIELD = 'recaptcha_challenge_field';
 my $RECAPTCHA_PUBLIC_KEY = Bibliotech::Config->get('RECAPTCHA', 'PUBLIC_KEY');
 my $RECAPTCHA_PRIVATE_KEY = Bibliotech::Config->get('RECAPTCHA', 'PRIVATE_KEY');
 
-__PACKAGE__->mk_accessors(qw/{
+__PACKAGE__->mk_accessors(qw{
                  recaptcha_result
                  path canonical_path canonical_path_for_cache_key
 			     parser command query request cgi location
