@@ -47,10 +47,21 @@ our $SKIP_EMAIL_VERIFICATION    = Bibliotech::Config->get('SKIP_EMAIL_VERIFICATI
 our $ANTISPAM_SCORE_LOG         = Bibliotech::Config->get('ANTISPAM', 'SCORE_LOG');
 our $ANTISPAM_CAPTCHA_LOG       = Bibliotech::Config->get('ANTISPAM', 'CAPTCHA_LOG');
 
-__PACKAGE__->mk_accessors(qw/path canonical_path canonical_path_for_cache_key
+# Recaptcha added by JS, without fully understanding the bibliotech framework
+use Captcha::reCAPTCHA;
+
+my $recaptcha_obj = Captcha::reCAPTCHA->new();
+our $RECAPTCHA_RESPONSE_FIELD = 'recaptcha_response_field';
+our $RECAPTCHA_CHALLENGE_FIELD = 'recaptcha_challenge_field';
+my $RECAPTCHA_PUBLIC_KEY = Bibliotech::Config->get('RECAPTCHA', 'PUBLIC_KEY');
+my $RECAPTCHA_PRIVATE_KEY = Bibliotech::Config->get('RECAPTCHA', 'PRIVATE_KEY');
+
+__PACKAGE__->mk_accessors(qw/{
+                 recaptcha_result
+                 path canonical_path canonical_path_for_cache_key
 			     parser command query request cgi location
 			     title heading link description user
-			     no_cache has_rss docroot error memcache log load/);
+			     no_cache has_rss docroot error memcache log load});
 
 sub version {
   $VERSION;
@@ -1173,6 +1184,63 @@ sub in_another_library {
   }
   return 0;
 }
+
+
+sub recaptcha_enabled {
+    return $RECAPTCHA_PUBLIC_KEY && $RECAPTCHA_PRIVATE_KEY;
+}
+
+sub recaptcha_error {
+    my ($self) = @_;
+
+    # no keys? can't check, assume no error
+    return undef unless $self->recaptcha_enabled;
+
+    if ( defined $self->recaptcha_result ) {
+        return
+            $self->recaptcha_result->{is_valid} ?
+            undef :
+            $self->recaptcha_result->{error};
+    }
+
+    if ( $self->cgi->param( $RECAPTCHA_RESPONSE_FIELD ) ) {
+        my $result = $recaptcha_obj->check_answer(
+            $RECAPTCHA_PRIVATE_KEY, $ENV{'REMOTE_ADDR'},
+            $self->cgi->param( $RECAPTCHA_CHALLENGE_FIELD ),
+            $self->cgi->param( $RECAPTCHA_RESPONSE_FIELD ),
+        );
+
+        # the result must be stored, because repeat calls to
+        # recaptcha->check_answer don't return the same result
+        # storing on the bibliotech object.
+        # recaptcha_html will clear it
+        $self->recaptcha_result($result);
+
+        if ( $result->{is_valid} ) {
+            return undef;
+        } else {
+            return $result->{error};
+        }
+    }
+    return undef;
+}
+
+sub recaptcha_html {
+    my ($self) = @_;
+
+    # no keys? don't do it
+    return '' unless $self->recaptcha_enabled;
+
+    my $html = $recaptcha_obj->get_html(
+        $RECAPTCHA_PUBLIC_KEY,
+        $self->recaptcha_error,
+    );
+
+    # clear the result, it's no longer needed
+    $self->recaptcha_result(undef);
+    return $html;
+}
+
 
 1;
 __END__
