@@ -51,6 +51,7 @@ sub html_content {
       $self->validate_username($username) if $button =~ /^Register$/i or $username;
       $self->validate_password($password, $password2);
       $self->validate_email($email, $email2);
+      $self->validate_recaptcha();
       eval {
 	if ($button =~ /^Register$/i) {
 	  my $new_user = $bibliotech->new_user($username, $password, $firstname, $lastname, $email);
@@ -130,6 +131,21 @@ sub validate_email {
     $email2                  or die [email2 => "Please re-enter your email address for verification.\n"];
     $email eq $email2        or die [email2 => "The email addresses do not match.\n"];
   });
+}
+
+sub validate_recaptcha {
+    my ($self) = @_;
+
+    return if ($self->bibliotech->user);
+    return unless ($self->bibliotech->recaptcha_enabled);
+
+    $self->validate_tests('recaptcha', sub {
+        if ($self->bibliotech->recaptcha_error) {
+            die [ recaptcha => "Failed RECAPTCHA test\n" ];
+        }
+    });
+
+    return;
 }
 
 1;
