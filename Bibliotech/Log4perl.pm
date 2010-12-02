@@ -23,8 +23,8 @@ log4perl.appender.STDERR.layout.ConversionPattern = %d %F{1} %L %c{2} %m%n
 CONF
 
 our $VERSION   = ( qw( $Revision$ ) )[1];
-our @EXPORT    = qw( logger debug_context name_of_object_or_class );
-our @EXPORT_OK = qw( init_logging default_init_logging get_log_conf_file );
+our @EXPORT_OK = qw(  logger debug_context name_of_object_or_class
+                      init_logging default_init_logging get_log_conf_file );
 
 {
     my $conf_file;
