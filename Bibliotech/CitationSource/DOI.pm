@@ -22,6 +22,7 @@ use Bibliotech::CitationSource;
 use base 'Bibliotech::CitationSource';
 
 use Bibliotech::CitationSource::Simple;
+use Bibliotech::Log4perl qw{ logger debug_context name_of_object_or_class };
 
 use XML::LibXML;
 use HTML::Entities;
@@ -108,6 +109,10 @@ sub query_result_calc {
 
 sub parse_crossref_xml {
   my ($self, $xml, $doi) = @_;
+
+  logger->debug( name_of_object_or_class($self) . "->parse_crossref_xml" );
+  logger->trace( "crossref xml: '$xml'" );
+
   return unless $xml;
   my $lib = XML::LibXML->new;
   my ($ok, $val) = $self->catch_transient_errstr(sub {
@@ -123,6 +128,9 @@ sub parse_crossref_xml {
     return $val_sub;
   });
   $ok or return;
+
+  logger->debug( "parsed crossref xml. status = : " . $val->('@status') );
+
   return {status  => 'unresolved'} if $val->('@status') eq 'unresolved';
   return {status  => 'resolved',
 	  pubdate => $val->('year') || undef,
