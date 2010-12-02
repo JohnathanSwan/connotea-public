@@ -2,6 +2,7 @@ package Bibliotech::Tag;
 use strict;
 use base 'Bibliotech::DBI';
 use Bibliotech::Query;
+use Bibliotech::L4P;
 
 __PACKAGE__->table('tag');
 __PACKAGE__->columns(Primary => qw/tag_id/);
@@ -100,6 +101,9 @@ LIMIT    %s
 
 sub search_for_tag_cloud {
   my ($self, $ignore_ref, $visitor) = @_;
+
+  logger->debug(name_of_object_or_class( $self ) . "->search_for_tag_cloud()");
+
   my $user = $visitor ? undef : $Bibliotech::Apache::USER;
   my ($privacywhere, @privacybind) = Bibliotech::Query->privacywhere($user);
   my ($ignore_question_marks, @ignore) = $self->parse_ignore_list($ignore_ref);
@@ -144,6 +148,9 @@ LIMIT    %s
 
 sub search_for_tag_cloud_in_window {
   my ($self, $window_spec, $lag_spec, $ignore_ref, $visitor) = @_;
+
+  logger->debug(name_of_object_or_class( $self ) . "->search_for_tag_cloud_in_window()");
+
   my $window = $self->untaint_time_window_spec($window_spec);
   my $lag    = $self->untaint_time_window_spec($lag_spec);
   my $user   = $visitor ? undef : $Bibliotech::Apache::USER;
@@ -201,6 +208,9 @@ LIMIT    %s
 
 sub search_for_popular_tags_in_window {
   my ($self, $window_spec, $lag_spec, $ignore_ref, $post_count_min, $user_count_min, $bookmark_count_min, $visitor, $limit_spec) = @_;
+
+  logger->debug(name_of_object_or_class( $self ) . "->search_for_popular_tags_in_window()");
+
   my $window = $self->untaint_time_window_spec($window_spec);
   my $lag    = $self->untaint_time_window_spec($lag_spec);
   my $user   = $visitor ? undef : $Bibliotech::Apache::USER;
@@ -217,11 +227,15 @@ sub search_for_popular_tags_in_window {
 }
 
 sub users {
-  return Bibliotech::User->search_from_tag(shift->tag_id);
+  my ($self) = @_;
+  logger->debug(name_of_object_or_class( $self ) . "->users");
+  return Bibliotech::User->search_from_tag($self);
 }
 
 sub bookmarks {
-  return Bibliotech::Bookmark->search_from_tag(shift->tag_id);
+  my ($self) = @_;
+  logger->debug(name_of_object_or_class( $self ) . "->bookmarks");
+  return Bibliotech::Bookmark->search_from_tag($self);
 }
 
 __PACKAGE__->set_sql(from_user => <<'');
@@ -269,6 +283,9 @@ ORDER BY t.name
 
 sub search_from_bookmark {
   my ($self, $bookmark_id) = @_;
+
+  logger->debug(name_of_object_or_class( $self ) . "->search_from_bookmark()");
+
   my ($privacywhere, @privacybind) = Bibliotech::Query->privacywhere($Bibliotech::Apache::USER);
   my $sth = $self->sql_from_bookmark_need_privacy($privacywhere);
   return $self->sth_to_objects($sth, [$bookmark_id, @privacybind]);
@@ -293,6 +310,9 @@ LIMIT    25
 
 sub search_most_active {
   my ($self, $visitor) = @_;
+
+  logger->debug(name_of_object_or_class( $self ) . "->search_most_active()");
+
   my $user = $visitor ? undef : $Bibliotech::Apache::USER;
   my ($privacywhere, @privacybind) = Bibliotech::Query->privacywhere($user);
   my $sth = $self->sql_most_active_need_privacy($privacywhere);
@@ -324,6 +344,9 @@ LIMIT    25;
 
 sub search_most_active_in_window {
   my ($self, $window_spec, $visitor) = @_;
+
+  logger->debug(name_of_object_or_class( $self ) . "->search_most_active_in_window");
+
   my $window = $self->untaint_time_window_spec($window_spec);
   my $user   = $visitor ? undef : $Bibliotech::Apache::USER;
   my ($privacywhere, @privacybind) = Bibliotech::Query->privacywhere($user);
@@ -342,11 +365,18 @@ sub standard_annotation_text {
 }
 
 sub user_tag_annotations {
-  Bibliotech::User_Tag_Annotation->search(tag => shift);
+  my ($self) = @_;
+
+  logger->debug(name_of_object_or_class( $self ) . "->user_tag_annotations");
+
+  Bibliotech::User_Tag_Annotation->search(tag => $self);
 }
 
 sub delete {
   my $self = shift;
+
+  logger->debug(name_of_object_or_class( $self ) . "->delete");
+
   $self->user_tag_annotations->delete_all;
   $self->SUPER::delete(@_);
 }

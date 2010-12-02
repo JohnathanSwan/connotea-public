@@ -7,6 +7,7 @@ use Encode qw/encode_utf8 decode_utf8 decode is_utf8/;
 use Bibliotech::Config;
 use Bibliotech::Util;
 use Bibliotech::FilterNames;
+use Bibliotech::L4P;
 
 our $DBI_CONNECT  = Bibliotech::Config->get_required('DBI_CONNECT');
 our $DBI_USERNAME = Bibliotech::Config->get('DBI_USERNAME');
@@ -298,6 +299,9 @@ sub packing_groupconcat {
 
 sub freematch_one_term {
   my ($self, $term) = @_;
+
+  logger->debug( name_of_object_or_class($self) . "->freematch_one_term()" );
+
   my $search_database = $DBI_SEARCH_DOT_OR_BLANK;
   # if you edit the query, be sure to change the return statement that sets up the binding parameters
   # sql union components included below in order (order is by descending score):

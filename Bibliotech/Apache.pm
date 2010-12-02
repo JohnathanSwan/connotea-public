@@ -24,6 +24,8 @@ use Bibliotech::Throttle;
 use Bibliotech::ReadOnly;
 use Bibliotech::WebCite;
 use Bibliotech::Profile;
+use Bibliotech::L4P;
+
 # load Inc because of its utility to include files as well as directly as a component
 use Bibliotech::Component::Inc;
 # load ReportProblemForm because it appears in html exception pages
@@ -111,6 +113,11 @@ sub handler {
   my $r = shift;
   my $pool = $r->pool;
 
+  debug_context( pid => $$ );
+  debug_context( ip => $r->connection->get_remote_host() );
+
+  logger->debug("Begin handler. ");
+
   cleanup_quick([\$USER_ID, \$USER, \%QUICK]);
   $USER_ID = $r->user || undef;
   $pool->cleanup_register(\&cleanup_quick, [\$USER_ID, \$USER, \%QUICK]);
@@ -158,6 +165,9 @@ sub handler {
       if $self->error =~ /(not a recognized|bad command|missing a parameter after the keyword)/;
 
   my $command = $self->command or return $self->explainable_http_code(NOT_FOUND, 'No command object available');
+
+  logger->trace("handler got command: " . Dumper([$command]));
+
   my $page    = $command->page_or_inc;
   my $output  = $command->output;
   return $self->explainable_http_code(NOT_FOUND, "We do not serve inc pages that are not html format.\noutput = $output")
@@ -174,6 +184,8 @@ sub handler {
   my $canonical_path = $command->canonical_uri(undef, undef, 1);
   $self->canonical_path($canonical_path);
 
+  logger->debug("canonical_path = $canonical_path");
+
   my $load;
   $MEMCACHE->add($LOAD_KEY => 0);                      # add does nothing if it already exists
   $load = $MEMCACHE->incr($LOAD_KEY);                  # incr only works on existing values, hence the add
@@ -184,6 +196,8 @@ sub handler {
   my $who      = (defined $USER ? 'user '.$USER->username." ($USER_ID)" : 'visitor');
   my $log_line = "$who requests $canonical_path bringing load to $load with db at $dbtime";
   $LOG->info($log_line);  # will also go in error report if there's an exception
+
+  logger->info($log_line);
 
   my $canonical_path_for_cache_key = $canonical_path->clone;
   my $args_obj = URI->new($location.'?'.$r->args);
@@ -209,11 +223,16 @@ sub handler {
 	       return 'library_export_handler' if $page =~ m!^(?:library/export|export/library)$!;
 	       return 'query_handler';
              };
+    logger->debug("About to run handler_func: $handler_func");
+
     $code = $self->$handler_func;
   };
 
   if ($@) {  # handle an exception bubbled up from main codebase
     my $e = $@;
+
+    logger->warn("Exception '$e' caught by handler");
+
     my ($note, $report);
     my $calc_report = sub { join("\n",
 				 'Error exception report:',
@@ -246,6 +265,7 @@ sub handler {
   $LOG->info("completed $canonical_path with code $code in $elapsed secs bringing load to $load");
   $LOG->flush;
 
+  logger->debug("handler returning ($code)");
   return code_for_handler_return($code);
 }
 

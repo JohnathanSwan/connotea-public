@@ -34,6 +34,7 @@ use Bibliotech::Plugin;
 use Bibliotech::CitationSource;
 use Bibliotech::Import;
 use Bibliotech::Antispam;
+use Bibliotech::L4P;
 
 our $VERSION = '1.8';
 
@@ -89,6 +90,9 @@ sub process {
   my $verb = $options{verb};
   my $die_on_error = $options{die_on_error};
   my $text = $self->path;
+
+  debug_context( req => "[$verb $text]");
+
   eval {
     $self->parser(Bibliotech::Parser->new);
     my $command = $self->parser->parse($text, $verb) or die "bad command ($text)\n";
