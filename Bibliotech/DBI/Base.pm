@@ -7,7 +7,7 @@ use Encode qw/encode_utf8 decode_utf8 decode is_utf8/;
 use Bibliotech::Config;
 use Bibliotech::Util;
 use Bibliotech::FilterNames;
-use Bibliotech::L4P qw{ logger debug_context name_of_object_or_class };
+use Bibliotech::Log4perl qw{ logger debug_context name_of_object_or_class };
 
 our $DBI_CONNECT  = Bibliotech::Config->get_required('DBI_CONNECT');
 our $DBI_USERNAME = Bibliotech::Config->get('DBI_USERNAME');

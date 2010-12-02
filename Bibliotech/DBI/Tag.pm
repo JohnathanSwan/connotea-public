@@ -2,7 +2,7 @@ package Bibliotech::Tag;
 use strict;
 use base 'Bibliotech::DBI';
 use Bibliotech::Query;
-use Bibliotech::L4P qw{ logger debug_context name_of_object_or_class };
+use Bibliotech::Log4perl qw{ logger debug_context name_of_object_or_class };
 
 __PACKAGE__->table('tag');
 __PACKAGE__->columns(Primary => qw/tag_id/);

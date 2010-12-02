@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-package Bibliotech::L4P;
+package Bibliotech::Log4perl;
 # ABSTRACT: A Bibliotech wrapper for Log4perl.
 
 # Added by Johnathan.Swan@semantico.com for debugging without interfering with

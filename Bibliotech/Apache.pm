@@ -24,7 +24,7 @@ use Bibliotech::Throttle;
 use Bibliotech::ReadOnly;
 use Bibliotech::WebCite;
 use Bibliotech::Profile;
-use Bibliotech::L4P qw{ logger debug_context name_of_object_or_class };
+use Bibliotech::Log4perl qw{ logger debug_context name_of_object_or_class };
 
 # load Inc because of its utility to include files as well as directly as a component
 use Bibliotech::Component::Inc;
