@@ -34,7 +34,7 @@ use Bibliotech::Plugin;
 use Bibliotech::CitationSource;
 use Bibliotech::Import;
 use Bibliotech::Antispam;
-use Bibliotech::L4P;
+use Bibliotech::L4P qw{ logger debug_context name_of_object_or_class };
 
 our $VERSION = '1.8';
 
