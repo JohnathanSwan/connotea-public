@@ -14,7 +14,6 @@ sub xmlnoun 	{ undef }
 sub prefix  	{ undef }
 sub suffix  	{ undef }
 sub urilabel    { undef }
-sub uri         { undef }
 sub natural_fmt { undef }
 
 sub new {

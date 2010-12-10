@@ -169,20 +169,6 @@ sub main_component {
   'ResignForm';
 }
 
-package Bibliotech::Page::Resign;
-use base 'Bibliotech::Page';
-
-sub main_component {
-  'ResignForm';
-}
-
-package Bibliotech::Page::Resign;
-use base 'Bibliotech::Page';
-
-sub main_component {
-  'ResignForm';
-}
-
 package Bibliotech::Page::Login;
 use base 'Bibliotech::Page';
 
