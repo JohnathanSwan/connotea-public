@@ -22,6 +22,7 @@ use Bibliotech::CitationSource;
 use base 'Bibliotech::CitationSource';
 
 use Bibliotech::CitationSource::Simple;
+use Bibliotech::CitationSource::DOIAuthorXtor;
 use Bibliotech::Log4perl qw{ logger debug_context name_of_object_or_class };
 
 use XML::LibXML;
@@ -40,6 +41,10 @@ sub name {
 
 sub version {
   '2.0';
+}
+
+sub _doi_author_extractor {
+    return 'Bibliotech::CitationSource::DOIAuthorXtor';
 }
 
 sub understands {
@@ -115,16 +120,25 @@ sub parse_crossref_xml {
 
   return unless $xml;
   my $lib = XML::LibXML->new;
+
+  # weird scoping things going on.
+  my $authors;
+
   my ($ok, $val) = $self->catch_transient_errstr(sub {
     local $_ = $xml;
     s/<crossref_result.*?>/<crossref_result>/;
     my $tree = eval { $lib->parse_string($_) };
-    $@                                                   and die "CrossRef XML parse failed: $@\n";
-    defined $tree                                         or die "CrossRef XML parse failed\n";
-    my $root = $tree->getDocumentElement                  or die 'no root';
+    $@ and die "CrossRef XML parse failed: $@\n";
+    defined $tree or die "CrossRef XML parse failed\n";
+    my $root = $tree->getDocumentElement or die 'no root';
     my $node = 'query_result/body/query/';
     my $val_sub = sub { $root->findvalue($node.shift) };
-    lc($val_sub->('doi')) eq lc($doi)                     or die "DOI mismatch\n";
+    lc($val_sub->('doi')) eq lc($doi) or die "DOI mismatch\n";
+
+    $authors = $self->_extract_crossref_authors($tree);
+
+    logger->debug("authors: @{ $authors }") if defined $authors;
+
     return $val_sub;
   });
   $ok or return;
@@ -132,6 +146,7 @@ sub parse_crossref_xml {
   logger->debug( "parsed crossref xml. status = : " . $val->('@status') );
 
   return {status  => 'unresolved'} if $val->('@status') eq 'unresolved';
+
   return {status  => 'resolved',
 	  pubdate => $val->('year') || undef,
 	  journal => { name => decode_entities($val->('journal_title')) || undef,
@@ -141,7 +156,23 @@ sub parse_crossref_xml {
 	  issue   => $val->('issue') || undef,
 	  pubdate => $val->('year') || undef,
 	  title   => decode_entities($val->('article_title')) || undef,
-	  doi     => $doi}; 
+	  doi     => $doi,
+      authors => $authors,
+      };
+}
+
+# accepts the LibXML document of the crossref XML
+#
+# returns an arrayref of strings that will be parsed by connotea to
+# populate the authors field.
+#
+# I know, the crossref XML contains useful structure of the author name,
+# but how to explain that to connotea in the present structure is
+# beyond me in the time I have to do this. --JS 2010-12-10
+sub _extract_crossref_authors {
+    my ($self, $tree) = @_;
+
+    return $self->_doi_author_extractor->extract_authors($tree);
 }
 
 sub _get_raw_doi_from_uri {
