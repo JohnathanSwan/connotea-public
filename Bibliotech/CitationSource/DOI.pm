@@ -121,7 +121,10 @@ sub parse_crossref_xml {
   return unless $xml;
   my $lib = XML::LibXML->new;
 
-  # weird scoping things going on.
+  # we'll declare the authors array here, and populate it (or not)
+  # in the inner scope, as the document object is not returned
+  # the "val" object only allows findvalue, and we need more than that
+  # to process the authors.
   my $authors;
 
   my ($ok, $val) = $self->catch_transient_errstr(sub {
