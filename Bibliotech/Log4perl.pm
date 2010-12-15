@@ -107,8 +107,8 @@ sub logger {
 }
 
 sub name_of_object_or_class {
-  my ($scalar) = @_;
-  return ref $scalar ? ref $scalar : $scalar;
+    my ($scalar) = @_;
+    return ref $scalar ? ref $scalar : $scalar;
 }
 
 1;
