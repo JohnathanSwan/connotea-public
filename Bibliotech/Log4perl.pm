@@ -72,8 +72,9 @@ sub default_init_logging {
     }
 
     # look for a default in /etc
-    if ( !defined $ENV{ LOG4PERL_CONFIG } ||
-         $ENV{ LOG4PERL_CONFIG } ne 'DEFAULT'
+    if (
+           (!defined $ENV{ LOG4PERL_CONFIG } ||
+            $ENV{ LOG4PERL_CONFIG } ne 'DEFAULT')
          && -f DEFAULT_CONF_FILE ) {
         return init_logging( DEFAULT_CONF_FILE );
     }
