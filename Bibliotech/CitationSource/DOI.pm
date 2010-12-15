@@ -68,7 +68,7 @@ sub _not_found_message {
   my $doi = shift;
   return "DOI $doi cannot be resolved. ".
          "It may not be in the CrossRef database, or you may have mis-entered it. ".
-	 "Please check it and try again.\n";
+         "Please check it and try again.\n";
 }
 
 sub citations {
@@ -109,60 +109,80 @@ sub query_result {
 
 sub query_result_calc {
   my ($self, $doi) = @_;
-  return $self->parse_crossref_xml($self->crossref_query($doi), $doi) || undef;
+  return $self->parse_unixref_xml($self->crossref_query($doi), $doi) || undef;
 }
 
-sub parse_crossref_xml {
+sub parse_unixref_xml {
   my ($self, $xml, $doi) = @_;
 
-  logger->debug( name_of_object_or_class($self) . "->parse_crossref_xml" );
-  logger->trace( "crossref xml: '$xml'" );
+  logger->debug( name_of_object_or_class($self) . "->parse_unixref_xml" );
+  logger->trace( "unixref xml: '$xml'" );
 
+  # no xml? can't do much
   return unless $xml;
+
+  # parse the XML
   my $lib = XML::LibXML->new;
+  my $tree = eval { $lib->parse_string($xml) };
 
-  # we'll declare the authors array here, and populate it (or not)
-  # in the inner scope, as the document object is not returned
-  # the "val" object only allows findvalue, and we need more than that
-  # to process the authors.
-  my $authors;
+  # parse errors
+  die "CrossRef XML parse failed: $@\n" if $@;
+  die "CrossRef XML parse failed\n" unless defined $tree;
 
-  my ($ok, $val) = $self->catch_transient_errstr(sub {
-    local $_ = $xml;
-    s/<crossref_result.*?>/<crossref_result>/;
-    my $tree = eval { $lib->parse_string($_) };
-    $@ and die "CrossRef XML parse failed: $@\n";
-    defined $tree or die "CrossRef XML parse failed\n";
-    my $root = $tree->getDocumentElement or die 'no root';
-    my $node = 'query_result/body/query/';
-    my $val_sub = sub { $root->findvalue($node.shift) };
-    lc($val_sub->('doi')) eq lc($doi) or die "DOI mismatch\n";
+  # set up some basics
+  my $root = $tree->getDocumentElement or die 'no root';
+  my $crossref_xpath = '/doi_records/doi_record/crossref/';
+  my $base_xpath = $crossref_xpath . 'journal/';
 
-    $authors = $self->_extract_crossref_authors($tree);
+  # check for an error from Crossref.
+  my $error_xpath = $crossref_xpath . 'error';
+  my ($error_node) = $tree->findnodes( $error_xpath );
+  if (defined $error_node) {
+      logger->info("Error looking up DOI $doi: " . $error_node->findvalue('.'));
+      # the unresolved status gets turned into an error message elsewhere
+      return { status => 'unresolved' };
+  }
 
-    logger->debug("authors: @{ $authors }") if defined $authors;
+  # $val is a helper sub that prepends the path to the data we want
+  my $val = sub {
+      my ($xpath) = @_;
+      my $full_xpath = $base_xpath.$xpath;
+      logger->debug( "get val: $full_xpath" );
 
-    return $val_sub;
-  });
-  $ok or return;
+      my $value = $root->findvalue($full_xpath);
+      logger->debug( "value: $full_xpath = $value" );
+      return $value;
+  };
 
-  logger->debug( "parsed crossref xml. status = : " . $val->('@status') );
+  # check the DOI returned matches the DOI requested...
+  my $doi_from_result = $val->('journal_article/doi_data/doi');
+  die "DOI mismatch: '$doi_from_result', '$doi'\n"
+      unless lc $doi_from_result eq lc $doi;
 
-  return {status  => 'unresolved'} if $val->('@status') eq 'unresolved';
+  # get the authors from the crossref XML
+  my $authors = $self->_extract_crossref_authors(
+      $tree, $base_xpath . 'journal_article'
+  );
+  logger->debug("unixref authors: @{ $authors }") if defined $authors;
 
-  return {status  => 'resolved',
-	  pubdate => $val->('year') || undef,
-	  journal => { name => decode_entities($val->('journal_title')) || undef,
-		       issn => $val->('issn[@type="print"]') || undef},
-	  page    => $val->('first_page') || undef,
-	  volume  => $val->('volume') || undef,
-	  issue   => $val->('issue') || undef,
-	  pubdate => $val->('year') || undef,
-	  title   => decode_entities($val->('article_title')) || undef,
-	  doi     => $doi,
+  # extract all of the metadata and return
+  my $metadata = {
+      status  => 'resolved',
+      pubdate => $val->('journal_article/publication_date/year') || undef,
+      journal => {
+        name => decode_entities($val->('journal_metadata/full_title')) || undef,
+        issn => $val->('journal_metadata/issn[@media_type="print"]') || undef
+      },
+      page    => $val->('journal_article/pages/first_page') || undef,
+      volume  => $val->('journal_issue/journal_volume') || undef,
+      issue   => $val->('journal_issue/issue') || undef,
+      title   => decode_entities($val->('journal_article/titles/title')) || undef,
+      doi     => $doi,
       authors => $authors,
-      };
+  };
+  return $metadata;
 }
+
 
 # accepts the LibXML document of the crossref XML
 #
@@ -173,9 +193,9 @@ sub parse_crossref_xml {
 # but how to explain that to connotea in the present structure is
 # beyond me in the time I have to do this. --JS 2010-12-10
 sub _extract_crossref_authors {
-    my ($self, $tree) = @_;
+    my ($self, $tree, $xpath_to_base) = @_;
 
-    return $self->_doi_author_extractor->extract_authors($tree);
+    return $self->_doi_author_extractor->extract_authors($tree, $xpath_to_base);
 }
 
 sub _get_raw_doi_from_uri {
@@ -210,12 +230,12 @@ sub _crossref_query_http_request {
   my $req = HTTP::Request->new(POST => CR_URL);
   $req->content_type('application/x-www-form-urlencoded');
   $req->content(join('&',
-		     'usr='.$user,
-		     'pwd='.$password,
-		     'db=mddb',
-		     'report=Brief',
-		     'format=XSD_XML',
-		     'qdata='.uri_escape($query_xml)));
+             'usr='.$user,
+             'pwd='.$password,
+             'db=mddb',
+             'report=Brief',
+             'format=UNIXREF',
+             'qdata='.uri_escape($query_xml)));
   return $req;
 }
 

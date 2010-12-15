@@ -5,6 +5,8 @@ use warnings;
 
 package Bibliotech::CitationSource::DOIAuthorXtor;
 
+use Bibliotech::Log4perl qw{logger};
+
 =head1 Bibliotech::CitationSource::DOIAuthorExtractor
        - extract authors from DOI metadata
 
@@ -36,38 +38,40 @@ Returns nothing if it can't find anything.
 
 =cut 
 sub extract_authors {
-    my ($self, $crossref_xml_doc) = @_;
+    my ($self, $crossref_xml_doc, $xpath_to_base) = @_;
 
     return unless $crossref_xml_doc && $crossref_xml_doc->can('findnodes');
 
     # There seem to be 2 models available in crossref.
     # the contributors models seems to be preferred, so try it first.
 
-    my $authors = $self->_crossref_contributors_tag_content($crossref_xml_doc);
-
-    if ( !defined $authors ) {
-        $authors = $self->_crossref_author_tag_content($crossref_xml_doc);
-    }
+    my $authors = $self->_crossref_contributors_tag_content(
+        $crossref_xml_doc, $xpath_to_base
+    );
 
     return $authors;
 }
 
 # extract authors from the 'contributors' model
 sub _crossref_contributors_tag_content {
-    my ($self, $crossref_xml_doc) = @_;
+    my ($self, $crossref_xml_doc, $xpath_to_base) = @_;
 
-    my $contrib_xpath = 'crossref_result/query_result/body/query/contributors';
+    my $contrib_xpath = $xpath_to_base . '/contributors';
+    logger->debug("looking for contributors at: $contrib_xpath");
+
     my ($contrib_node) = $crossref_xml_doc->findnodes($contrib_xpath);
+    logger->debug("contrib node not found") unless defined $contrib_node;
 
     return unless defined $contrib_node;
 
-    my @contributors = $contrib_node->findnodes('contributor');
+    my @contributors = $contrib_node->findnodes('person_name');
+    logger->debug("found contribs: " . scalar @contributors);
 
     return unless @contributors;
     my @authors;
 
     foreach my $contributor ( @contributors ) {
-
+        logger->debug("processing contributor: $contributor");
         # make a name string in the form "given_name* surname suffix*"
         # as specified in the crossref query response 2.0 xsd
 
@@ -99,23 +103,6 @@ sub _crossref_contributors_tag_content {
     }
 
     return \@authors;
-}
-
-# extract authors from the 'author' model
-# This is probably not returned from crossref any more,
-# but it's still in the 2.0 xsd, so I'll handle it
-#
-# The author tag is just a text node, so won't attempt any
-# processing.
-sub _crossref_author_tag_content {
-    my ($self, $crossref_xml_doc) = @_;
-
-    my $author_xpath = 'crossref_result/query_result/body/query/author';
-    my ($author_node) = $crossref_xml_doc->findnodes($author_xpath);
-
-    return unless defined $author_node;
-
-    return [ $author_node->findvalue('.') ];
 }
 
 1;

@@ -15,6 +15,8 @@ my $test_data = do { local $INPUT_RECORD_SEPARATOR; <DATA> };
 
 my @tests = split qr{\nTEST_DATA_SEPARATOR\n}, $test_data;
 
+my $base_xpath = '/doi_records/doi_record/crossref/journal/journal_article';
+
 foreach (@tests) {
     my ($description, $xml, $out) = split qr{---TESTPART\n}, $_;
 
@@ -24,14 +26,12 @@ foreach (@tests) {
     chomp $xml;
     chomp $out;
 
-    # replicate the nasty hack the connotea code does
-    # to get rid of namespaces !!
-
-    $xml =~ s{<crossref_result.*?>}{<crossref_result>}s;
-
     my $doc = $parser->parse_string($xml);
 
-    is(_tostring( $pkg_under_test->extract_authors($doc) ), $out, $description);
+    is(_tostring( $pkg_under_test->extract_authors($doc, $base_xpath) ),
+       $out,
+       $description,
+    );
 }
 
 ################### end of tests
@@ -49,290 +49,386 @@ sub _tostring {
 __DATA__
 A simple example
 ---TESTPART
-<?xml version = "1.0" encoding = "UTF-8"?>
-<crossref_result version="2.0" xmlns="http://www.crossref.org/qrschema/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://
-www.crossref.org/qrschema/2.0 http://www.crossref.org/qrschema/crossref_query_output2.0.xsd">
-
-<query_result>
-        <head>
-                <email_address>connotea@nature.com</email_address>
-                <doi_batch_id>DOI-B1</doi_batch_id>
-        </head>
-        <body>
-
-                <query key="MyKey1" status="resolved" fl_count="0" >
-                        <doi type="journal_article">10.1038/news.2010.647</doi>
-                        <issn type="print">00280836</issn>
-                        <issn type="electronic">14764687</issn>
-                        <journal_title>Nature</journal_title><contributors>
-        <contributor first-author="true">
-                <given_name>Jon</given_name>
-                <surname>Carpetright</surname>
-        </contributor>
-</contributors>
-                        <year>2010</year>
-                        <publication_type>full_text</publication_type>
-                        <article_title>Optical wing generates lift from light</article_title>
-                </query>
-
-        </body>
-</query_result>
-
-</crossref_result>
+<doi_records>
+<doi_record version="1.1">
+ <crossref>
+  <journal>
+   <journal_metadata>
+    <full_title>Cell Death and Differentiation</full_title>
+    <abbrev_title>Cell Death Differ</abbrev_title>
+    <issn media_type="print">1350-9047</issn>
+    <issn media_type="electronic">1476-5403</issn>
+   </journal_metadata>
+   <journal_issue>
+    <publication_date media_type="online">
+     <month>11</month>
+     <day>26</day>
+     <year>2010</year>
+    </publication_date>
+   </journal_issue>
+   <journal_article publication_type="full_text">
+    <titles>
+     <title>Galectin-1 sensitizes carcinoma cells to anoikis via the fibronectin receptor α5β1-integrin</title>
+    </titles>
+    <contributors>
+     <person_name sequence="first" contributor_role="author">
+      <given_name>Jon</given_name>
+      <surname>Carpetright</surname>
+     </person_name>
+    </contributors>
+    <publication_date media_type="online">
+     <month>11</month>
+     <day>26</day>
+     <year>2010</year>
+    </publication_date>
+    <publisher_item>
+     <identifier id_type="other">cdd2010148</identifier>
+    </publisher_item>
+    <doi_data>
+     <doi>10.1038/cdd.2010.148</doi>
+     <timestamp>20101126105302</timestamp>
+     <resource>http://www.nature.com/doifinder/10.1038/cdd.2010.148</resource>
+    </doi_data>
+    <citation_list>
+     <citation key="cdd2010148-bib1">
+      <doi>10.1007/s10555-005-5134-3</doi>
+     </citation>
+    </citation_list>
+   </journal_article>
+  </journal>
+ </crossref>
+</doi_record>
+</doi_records>
 ---TESTPART
 Jon Carpetright
 TEST_DATA_SEPARATOR
 An author with a suffix
 ---TESTPART
-<?xml version = "1.0" encoding = "UTF-8"?>
-<crossref_result version="2.0" xmlns="http://www.crossref.org/qrschema/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://
-www.crossref.org/qrschema/2.0 http://www.crossref.org/qrschema/crossref_query_output2.0.xsd">
-
-<query_result>
-        <head>
-                <email_address>connotea@nature.com</email_address>
-                <doi_batch_id>DOI-B1</doi_batch_id>
-        </head>
-        <body>
-
-                <query key="MyKey1" status="resolved" fl_count="0" >
-                        <doi type="journal_article">10.1038/news.2010.647</doi>
-                        <issn type="print">00280836</issn>
-                        <issn type="electronic">14764687</issn>
-                        <journal_title>Nature</journal_title><contributors>
-        <contributor first-author="true">
-                <given_name>Jon</given_name>
-                <surname>Carpetright</surname>
-                <suffix>Sr.</suffix>
-        </contributor>
-</contributors>
-                        <year>2010</year>
-                        <publication_type>full_text</publication_type>
-                        <article_title>Optical wing generates lift from light</article_title>
-                </query>
-
-        </body>
-</query_result>
-
-</crossref_result>
+<doi_records>
+<doi_record version="1.1">
+ <crossref>
+  <journal>
+   <journal_metadata>
+    <full_title>Cell Death and Differentiation</full_title>
+    <abbrev_title>Cell Death Differ</abbrev_title>
+    <issn media_type="print">1350-9047</issn>
+    <issn media_type="electronic">1476-5403</issn>
+   </journal_metadata>
+   <journal_issue>
+    <publication_date media_type="online">
+     <month>11</month>
+     <day>26</day>
+     <year>2010</year>
+    </publication_date>
+   </journal_issue>
+   <journal_article publication_type="full_text">
+    <titles>
+     <title>Galectin-1 sensitizes carcinoma cells to anoikis via the fibronectin receptor α5β1-integrin</title>
+    </titles>
+    <contributors>
+     <person_name sequence="first" contributor_role="author">
+      <given_name>Jon</given_name>
+      <surname>Carpetright</surname>
+      <suffix>Sr.</suffix>
+     </person_name>
+    </contributors>
+    <publication_date media_type="online">
+     <month>11</month>
+     <day>26</day>
+     <year>2010</year>
+    </publication_date>
+    <publisher_item>
+     <identifier id_type="other">cdd2010148</identifier>
+    </publisher_item>
+    <doi_data>
+     <doi>10.1038/cdd.2010.148</doi>
+     <timestamp>20101126105302</timestamp>
+     <resource>http://www.nature.com/doifinder/10.1038/cdd.2010.148</resource>
+    </doi_data>
+    <citation_list>
+     <citation key="cdd2010148-bib1">
+      <doi>10.1007/s10555-005-5134-3</doi>
+     </citation>
+    </citation_list>
+   </journal_article>
+  </journal>
+ </crossref>
+</doi_record>
+</doi_records>
 ---TESTPART
 Jon Carpetright Sr.
 TEST_DATA_SEPARATOR
 Someone with many given names
 ---TESTPART
-<?xml version = "1.0" encoding = "UTF-8"?>
-<crossref_result version="2.0" xmlns="http://www.crossref.org/qrschema/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://
-www.crossref.org/qrschema/2.0 http://www.crossref.org/qrschema/crossref_query_output2.0.xsd">
-
-<query_result>
-        <head>
-                <email_address>connotea@nature.com</email_address>
-                <doi_batch_id>DOI-B1</doi_batch_id>
-        </head>
-        <body>
-
-                <query key="MyKey1" status="resolved" fl_count="0" >
-                        <doi type="journal_article">10.1038/news.2010.647</doi>
-                        <issn type="print">00280836</issn>
-                        <issn type="electronic">14764687</issn>
-                        <journal_title>Nature</journal_title><contributors>
-        <contributor first-author="true">
-                <given_name>Foo</given_name>
-                <given_name>Cooper</given_name>
-                <given_name>Sooper</given_name>
-
-                <given_name>Dooper</given_name>
-                <surname>Carpetright</surname>
-        </contributor>
-</contributors>
-                        <year>2010</year>
-                        <publication_type>full_text</publication_type>
-                        <article_title>Optical wing generates lift from light</article_title>
-                </query>
-
-        </body>
-</query_result>
-
-</crossref_result>
+<doi_records>
+<doi_record version="1.1">
+ <crossref>
+  <journal>
+   <journal_metadata>
+    <full_title>Cell Death and Differentiation</full_title>
+    <abbrev_title>Cell Death Differ</abbrev_title>
+    <issn media_type="print">1350-9047</issn>
+    <issn media_type="electronic">1476-5403</issn>
+   </journal_metadata>
+   <journal_issue>
+    <publication_date media_type="online">
+     <month>11</month>
+     <day>26</day>
+     <year>2010</year>
+    </publication_date>
+   </journal_issue>
+   <journal_article publication_type="full_text">
+    <titles>
+     <title>Galectin-1 sensitizes carcinoma cells to anoikis via the fibronectin receptor α5β1-integrin</title>
+    </titles>
+    <contributors>
+     <person_name sequence="first" contributor_role="author">
+      <given_name>Foo Cooper Sooper Dooper</given_name>
+      <surname>Carpetright</surname>
+     </person_name>
+    </contributors>
+    <publication_date media_type="online">
+     <month>11</month>
+     <day>26</day>
+     <year>2010</year>
+    </publication_date>
+    <publisher_item>
+     <identifier id_type="other">cdd2010148</identifier>
+    </publisher_item>
+    <doi_data>
+     <doi>10.1038/cdd.2010.148</doi>
+     <timestamp>20101126105302</timestamp>
+     <resource>http://www.nature.com/doifinder/10.1038/cdd.2010.148</resource>
+    </doi_data>
+    <citation_list>
+     <citation key="cdd2010148-bib1">
+      <doi>10.1007/s10555-005-5134-3</doi>
+     </citation>
+    </citation_list>
+   </journal_article>
+  </journal>
+ </crossref>
+</doi_record>
+</doi_records>
 ---TESTPART
 Foo Cooper Sooper Dooper Carpetright
 TEST_DATA_SEPARATOR
 Someone with only a surname
 ---TESTPART
-<?xml version = "1.0" encoding = "UTF-8"?>
-<crossref_result version="2.0" xmlns="http://www.crossref.org/qrschema/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://
-www.crossref.org/qrschema/2.0 http://www.crossref.org/qrschema/crossref_query_output2.0.xsd">
-
-<query_result>
-        <head>
-                <email_address>connotea@nature.com</email_address>
-                <doi_batch_id>DOI-B1</doi_batch_id>
-        </head>
-        <body>
-
-                <query key="MyKey1" status="resolved" fl_count="0" >
-                        <doi type="journal_article">10.1038/news.2010.647</doi>
-                        <issn type="print">00280836</issn>
-                        <issn type="electronic">14764687</issn>
-                        <journal_title>Nature</journal_title><contributors>
-        <contributor first-author="true">
-                <surname>Thegoldenone</surname>
-        </contributor>
-</contributors>
-                        <year>2010</year>
-                        <publication_type>full_text</publication_type>
-                        <article_title>Optical wing generates lift from light</article_title>
-                </query>
-
-        </body>
-</query_result>
-
-</crossref_result>
+<doi_records>
+<doi_record version="1.1">
+ <crossref>
+  <journal>
+   <journal_metadata>
+    <full_title>Cell Death and Differentiation</full_title>
+    <abbrev_title>Cell Death Differ</abbrev_title>
+    <issn media_type="print">1350-9047</issn>
+    <issn media_type="electronic">1476-5403</issn>
+   </journal_metadata>
+   <journal_issue>
+    <publication_date media_type="online">
+     <month>11</month>
+     <day>26</day>
+     <year>2010</year>
+    </publication_date>
+   </journal_issue>
+   <journal_article publication_type="full_text">
+    <titles>
+     <title>Galectin-1 sensitizes carcinoma cells to anoikis via the fibronectin receptor α5β1-integrin</title>
+    </titles>
+    <contributors>
+     <person_name sequence="first" contributor_role="author">
+      <surname>Thegoldenone</surname>
+     </person_name>
+    </contributors>
+    <publication_date media_type="online">
+     <month>11</month>
+     <day>26</day>
+     <year>2010</year>
+    </publication_date>
+    <publisher_item>
+     <identifier id_type="other">cdd2010148</identifier>
+    </publisher_item>
+    <doi_data>
+     <doi>10.1038/cdd.2010.148</doi>
+     <timestamp>20101126105302</timestamp>
+     <resource>http://www.nature.com/doifinder/10.1038/cdd.2010.148</resource>
+    </doi_data>
+    <citation_list>
+     <citation key="cdd2010148-bib1">
+      <doi>10.1007/s10555-005-5134-3</doi>
+     </citation>
+    </citation_list>
+   </journal_article>
+  </journal>
+ </crossref>
+</doi_record>
+</doi_records>
 ---TESTPART
 Thegoldenone
 TEST_DATA_SEPARATOR
-Multiple  authors
+Multiple authors
 ---TESTPART
-<?xml version = "1.0" encoding = "UTF-8"?>
-<crossref_result version="2.0" xmlns="http://www.crossref.org/qrschema/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://
-www.crossref.org/qrschema/2.0 http://www.crossref.org/qrschema/crossref_query_output2.0.xsd">
-
-<query_result>
-        <head>
-                <email_address>connotea@nature.com</email_address>
-                <doi_batch_id>DOI-B1</doi_batch_id>
-        </head>
-        <body>
-
-                <query key="MyKey1" status="resolved" fl_count="0" >
-                        <doi type="journal_article">10.1038/news.2010.647</doi>
-                        <issn type="print">00280836</issn>
-                        <issn type="electronic">14764687</issn>
-                        <journal_title>Nature</journal_title><contributors>
-        <contributor first-author="true">
-                <given_name>Foo</given_name>
-                <given_name>Cooper</given_name>
-                <given_name>Sooper</given_name>
-
-                <given_name>Dooper</given_name>
-                <surname>Carpetright</surname>
-        </contributor>
-        <contributor first-author="true">
-                <given_name>Bar</given_name>
-                <surname>Saunders</surname>
-        </contributor>
-        <contributor first-author="true">
-                <given_name>Baz</given_name>
-                <surname>Scott</surname>
-                <suffix>III</suffix>
-        </contributor>
-        <contributor first-author="true">
-                <surname>Thegoldenone</surname>
-        </contributor>
-
-</contributors>
-                        <year>2010</year>
-                        <publication_type>full_text</publication_type>
-                        <article_title>Optical wing generates lift from light</article_title>
-                </query>
-
-        </body>
-</query_result>
-
-</crossref_result>
----TESTPART
+<doi_records>
+<doi_record version="1.1">
+ <crossref>
+  <journal>
+   <journal_metadata>
+    <full_title>Cell Death and Differentiation</full_title>
+    <abbrev_title>Cell Death Differ</abbrev_title>
+    <issn media_type="print">1350-9047</issn>
+    <issn media_type="electronic">1476-5403</issn>
+   </journal_metadata>
+   <journal_issue>
+    <publication_date media_type="online">
+     <month>11</month>
+     <day>26</day>
+     <year>2010</year>
+    </publication_date>
+   </journal_issue>
+   <journal_article publication_type="full_text">
+    <titles>
+     <title>Galectin-1 sensitizes carcinoma cells to anoikis via the fibronectin receptor α5β1-integrin</title>
+    </titles>
+    <contributors>
+     <person_name sequence="first" contributor_role="author">
+      <given_name>Foo Cooper Sooper Dooper</given_name>
+      <surname>Carpetright</surname>
+     </person_name>
+     <person_name sequence="first" contributor_role="author">
+      <given_name>Bar</given_name>
+      <surname>Saunders</surname>
+     </person_name>
+     <person_name sequence="first" contributor_role="author">
+      <given_name>Baz</given_name>
+      <surname>Scott</surname>
+      <suffix>III</suffix>
+     </person_name>
+     <person_name sequence="first" contributor_role="author">
+      <surname>Thegoldenone</surname>
+     </person_name>
+    </contributors>
+    <publication_date media_type="online">
+     <month>11</month>
+     <day>26</day>
+     <year>2010</year>
+    </publication_date>
+    <publisher_item>
+     <identifier id_type="other">cdd2010148</identifier>
+    </publisher_item>
+    <doi_data>
+     <doi>10.1038/cdd.2010.148</doi>
+     <timestamp>20101126105302</timestamp>
+     <resource>http://www.nature.com/doifinder/10.1038/cdd.2010.148</resource>
+    </doi_data>
+    <citation_list>
+     <citation key="cdd2010148-bib1">
+      <doi>10.1007/s10555-005-5134-3</doi>
+     </citation>
+    </citation_list>
+   </journal_article>
+  </journal>
+ </crossref>
+</doi_record>
+</doi_records>---TESTPART
 Foo Cooper Sooper Dooper Carpetright;Bar Saunders;Baz Scott III;Thegoldenone
 TEST_DATA_SEPARATOR
 No authors
 ---TESTPART
-<?xml version = "1.0" encoding = "UTF-8"?>
-<crossref_result version="2.0" xmlns="http://www.crossref.org/qrschema/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://
-www.crossref.org/qrschema/2.0 http://www.crossref.org/qrschema/crossref_query_output2.0.xsd">
-
-<query_result>
-        <head>
-                <email_address>connotea@nature.com</email_address>
-                <doi_batch_id>DOI-B1</doi_batch_id>
-        </head>
-        <body>
-
-                <query key="MyKey1" status="resolved" fl_count="0" >
-                        <doi type="journal_article">10.1038/news.2010.647</doi>
-                        <issn type="print">00280836</issn>
-                        <issn type="electronic">14764687</issn>
-                        <journal_title>Nature</journal_title>
-                        <year>2010</year>
-                        <publication_type>full_text</publication_type>
-                        <article_title>Optical wing generates lift from light</article_title>
-                </query>
-
-        </body>
-</query_result>
-
-</crossref_result>
+<doi_records>
+<doi_record version="1.1">
+ <crossref>
+  <journal>
+   <journal_metadata>
+    <full_title>Cell Death and Differentiation</full_title>
+    <abbrev_title>Cell Death Differ</abbrev_title>
+    <issn media_type="print">1350-9047</issn>
+    <issn media_type="electronic">1476-5403</issn>
+   </journal_metadata>
+   <journal_issue>
+    <publication_date media_type="online">
+     <month>11</month>
+     <day>26</day>
+     <year>2010</year>
+    </publication_date>
+   </journal_issue>
+   <journal_article publication_type="full_text">
+    <titles>
+     <title>Galectin-1 sensitizes carcinoma cells to anoikis via the fibronectin receptor α5β1-integrin</title>
+    </titles>
+    <publication_date media_type="online">
+     <month>11</month>
+     <day>26</day>
+     <year>2010</year>
+    </publication_date>
+    <publisher_item>
+     <identifier id_type="other">cdd2010148</identifier>
+    </publisher_item>
+    <doi_data>
+     <doi>10.1038/cdd.2010.148</doi>
+     <timestamp>20101126105302</timestamp>
+     <resource>http://www.nature.com/doifinder/10.1038/cdd.2010.148</resource>
+    </doi_data>
+    <citation_list>
+     <citation key="cdd2010148-bib1">
+      <doi>10.1007/s10555-005-5134-3</doi>
+     </citation>
+    </citation_list>
+   </journal_article>
+  </journal>
+ </crossref>
+</doi_record>
+</doi_records>
 ---TESTPART
 
 TEST_DATA_SEPARATOR
 <contributors> but not <contributor>s
 ---TESTPART
-<?xml version = "1.0" encoding = "UTF-8"?>
-<crossref_result version="2.0" xmlns="http://www.crossref.org/qrschema/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://
-www.crossref.org/qrschema/2.0 http://www.crossref.org/qrschema/crossref_query_output2.0.xsd">
-
-<query_result>
-        <head>
-                <email_address>connotea@nature.com</email_address>
-                <doi_batch_id>DOI-B1</doi_batch_id>
-        </head>
-        <body>
-
-                <query key="MyKey1" status="resolved" fl_count="0" >
-                        <doi type="journal_article">10.1038/news.2010.647</doi>
-                        <issn type="print">00280836</issn>
-                        <issn type="electronic">14764687</issn>
-                        <journal_title>Nature</journal_title>
-<contributors>
-</contributors>
-
-                        <year>2010</year>
-                        <publication_type>full_text</publication_type>
-                        <article_title>Optical wing generates lift from light</article_title>
-                </query>
-
-        </body>
-</query_result>
-
-</crossref_result>
+<doi_records>
+<doi_record version="1.1">
+ <crossref>
+  <journal>
+   <journal_metadata>
+    <full_title>Cell Death and Differentiation</full_title>
+    <abbrev_title>Cell Death Differ</abbrev_title>
+    <issn media_type="print">1350-9047</issn>
+    <issn media_type="electronic">1476-5403</issn>
+   </journal_metadata>
+   <journal_issue>
+    <publication_date media_type="online">
+     <month>11</month>
+     <day>26</day>
+     <year>2010</year>
+    </publication_date>
+   </journal_issue>
+   <journal_article publication_type="full_text">
+    <titles>
+     <title>Galectin-1 sensitizes carcinoma cells to anoikis via the fibronectin receptor α5β1-integrin</title>
+    </titles>
+    <contributors>
+    </contributors>
+    <publication_date media_type="online">
+     <month>11</month>
+     <day>26</day>
+     <year>2010</year>
+    </publication_date>
+    <publisher_item>
+     <identifier id_type="other">cdd2010148</identifier>
+    </publisher_item>
+    <doi_data>
+     <doi>10.1038/cdd.2010.148</doi>
+     <timestamp>20101126105302</timestamp>
+     <resource>http://www.nature.com/doifinder/10.1038/cdd.2010.148</resource>
+    </doi_data>
+    <citation_list>
+     <citation key="cdd2010148-bib1">
+      <doi>10.1007/s10555-005-5134-3</doi>
+     </citation>
+    </citation_list>
+   </journal_article>
+  </journal>
+ </crossref>
+</doi_record>
+</doi_records>
 ---TESTPART
 
-TEST_DATA_SEPARATOR
-Old style author tag
----TESTPART
-<?xml version = "1.0" encoding = "UTF-8"?>
-<crossref_result version="2.0" xmlns="http://www.crossref.org/qrschema/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://
-www.crossref.org/qrschema/2.0 http://www.crossref.org/qrschema/crossref_query_output2.0.xsd">
-
-<query_result>
-        <head>
-                <email_address>connotea@nature.com</email_address>
-                <doi_batch_id>DOI-B1</doi_batch_id>
-        </head>
-        <body>
-
-                <query key="MyKey1" status="resolved" fl_count="0" >
-                        <doi type="journal_article">10.1038/news.2010.647</doi>
-                        <issn type="print">00280836</issn>
-                        <issn type="electronic">14764687</issn>
-                        <journal_title>Nature</journal_title>
-                        <author>Fish Fever</author>
-                        <year>2010</year>
-                        <publication_type>full_text</publication_type>
-                        <article_title>Optical wing generates lift from light</article_title>
-                </query>
-
-        </body>
-</query_result>
-
-</crossref_result>
----TESTPART
-Fish Fever
