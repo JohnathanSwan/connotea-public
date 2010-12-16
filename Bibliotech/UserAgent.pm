@@ -105,11 +105,17 @@ require HTTP::OAI::UserAgent;
 package Bibliotech::HTTP::Response;
 use base 'HTTP::Response';
 
-# supplemented by document-based character set designations
-sub decoded_content {
+# hastily renamed to bibliotech_decoded_content from decoded_content by JS
+# after finding infinite recursion because something inside the
+# SUPER::decoded_content was calling back to this.
+
+sub bibliotech_decoded_content {
   my $response = shift;
   my $content = $response->content;
   my @types = ($response->header('Content-Type'));
+
+  # supplemented by document-based character set designations
+
 
   # pick up a couple extra non-header variants:
   my ($first_5_lines) = $content =~ /^((?:.*\n){0,5})/;
@@ -137,6 +143,7 @@ sub decoded_content {
 
   # offer default for charset based on type if necessary:
   $charset ||= ($type && $type =~ /(?:xml|xhtml|rss|rdf)/ ? 'utf8' : 'iso-8859-1');
+
 
   my $decoded = eval { $response->SUPER::decoded_content
 			   ($content, charset => $charset, raise_error => 1) || $content; };

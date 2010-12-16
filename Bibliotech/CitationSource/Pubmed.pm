@@ -59,7 +59,7 @@ sub _is_search_page_with_one_result {
   my $content_sub = shift or return;
   my ($response) = $content_sub->();
   return unless $response->is_success;
-  my @uids = _abstract_uids_from_search_page_html($response->decoded_content);
+  my @uids = _abstract_uids_from_search_page_html($response->bibliotech_decoded_content);
   return unless @uids == 1;
   return $uids[0];
 }

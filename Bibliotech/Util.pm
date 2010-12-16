@@ -156,7 +156,7 @@ sub ua_get_response {
 # request a network document using our special ua object and return just the content or response plus content
 sub ua_get_content_decoded {
   my $response = ua_get_response(@_);
-  my $content  = $response->is_success ? $response->decoded_content : undef;  # decoded in Bibliotech::UserAgent
+  my $content  = $response->is_success ? $response->bibliotech_decoded_content : undef;  # decoded in Bibliotech::UserAgent
   return wantarray ? ($response, $content) : $content;
 }
 

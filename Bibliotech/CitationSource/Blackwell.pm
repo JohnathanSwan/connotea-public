@@ -75,7 +75,7 @@ sub citations {
 			   'direct'  => 'checked',
 			   'submit'  => 'Download references']);
 
-      $ris = Bibliotech::CitationSource::NPG::RIS->new($res->decoded_content);
+      $ris = Bibliotech::CitationSource::NPG::RIS->new($res->bibliotech_decoded_content);
       die "RIS obj false\n" unless $ris;
       die "RIS file contained no data\n" unless $ris->has_data;
       $ris->{M3} = $id;

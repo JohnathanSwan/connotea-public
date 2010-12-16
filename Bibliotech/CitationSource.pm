@@ -211,7 +211,7 @@ sub content_or_set {
 	       grep { $content_type =~ /$_/ } (@{$acceptable_content_types})
 		   or die "Content type is not acceptable ($content_type)\n";
 	     }
-	     return $response->decoded_content;
+	     return $response->bibliotech_decoded_content;
        }, $mutator);
   return $ok ? $content : undef;
 }

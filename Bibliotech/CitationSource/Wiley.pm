@@ -75,7 +75,7 @@ sub citations {
 				   'file'           => PC,
 				   'exportCitation' => 'submit']);
     if ($response->is_success) {
-      my $raw_text = $response->decoded_content;
+      my $raw_text = $response->bibliotech_decoded_content;
       $text = Bibliotech::CitationSource::Wiley::TEXT->new($raw_text);
     } else {
       die $response->status_line;
