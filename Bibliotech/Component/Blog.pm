@@ -34,7 +34,7 @@ sub lazy_update {
 
 sub get_feed {
   my $feed = XML::Feed->parse($FEED_URL) or return;
-  bless $feed, 'Bibliotech::Component::Blog::Feed::RSS';
+  bless $feed, 'Bibliotech::Component::Blog::Feed::Atom';
   return $feed;
 }
 
@@ -57,6 +57,22 @@ sub html_content_calc {
   return Bibliotech::Page::HTML_Content->simple($o);
 }
 
+package Bibliotech::Component::Blog::Feed::Atom;
+use base 'XML::Feed::Atom';
+
+sub entries {
+  [map { bless $_, 'Bibliotech::Component::Blog::Feed::Entry::Atom' } shift->SUPER::entries];
+}
+
+package Bibliotech::Component::Blog::Feed::Entry::Atom;
+use base 'XML::Feed::Entry::Atom';
+use Bibliotech::DBI;
+
+sub issued {
+  bless shift->SUPER::issued, 'Bibliotech::Date';
+}
+
+
 package Bibliotech::Component::Blog::Feed::RSS;
 use base 'XML::Feed::RSS';
 
@@ -71,6 +87,7 @@ use Bibliotech::DBI;
 sub issued {
   bless shift->SUPER::issued, 'Bibliotech::Date';
 }
+
 
 1;
 __END__
