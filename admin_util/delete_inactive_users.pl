@@ -12,17 +12,21 @@ my $verbose = undef;
 my $debug = undef;
 my $opt_noop = undef;
 my $dbpw = undef;
+my $opt_date_limit;
 
 my $result = GetOptions (
         'verbose' => \$verbose, 
         'debug' => \$debug, 
         'noop' => \$opt_noop,
         'dbpass=s' => \$dbpw,
+        'date_limit=s' => \$opt_date_limit,
     );
+
+die 'please specify a date for --date_limit=YYYY-mm-dd' unless $opt_date_limit =~ m{\A\d\d\d\d-\d\d-\d\d\z}ms;
 
 # CONFIG VARIABLES
 my $database = "connotea";
-my $host = "cstnpgdb01b";
+my $host = "192.168.10.25";
 my $port = "3306";
 my $dbuser = "connotea";
 
@@ -101,7 +105,7 @@ sub delete_user_cascade {
 sub get_inactive_users {
     my ($dbh) = @_;
 
-    return $dbh->selectall_arrayref('SELECT user_id FROM user WHERE active = 0');
+    return $dbh->selectall_arrayref("SELECT user_id FROM user WHERE active = 0 AND updated < '$opt_date_limit' AND created < '$opt_date_limit' AND verifycode IS NULL" );
 }
 
 sub main {
