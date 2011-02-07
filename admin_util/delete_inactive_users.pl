@@ -105,7 +105,7 @@ sub delete_user_cascade {
 sub get_inactive_users {
     my ($dbh) = @_;
 
-    return $dbh->selectall_arrayref("SELECT user_id FROM user WHERE active = 0 AND updated < '$opt_date_limit' AND created < '$opt_date_limit' AND verifycode IS NULL" );
+    return $dbh->selectall_arrayref("SELECT user_id FROM user WHERE active = 0 AND updated < '$opt_date_limit' AND created < '$opt_date_limit'" );
 }
 
 sub main {
